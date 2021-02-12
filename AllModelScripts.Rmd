@@ -1,0 +1,838 @@
+
+Scripts Symb Selection Experiment 2014 (Bette, Madeleine, Kate, Bill, Victor, Carlos)
+
+FvFm data
+```{r}
+#RUN THE MODEL
+PAMInshore_Subject_Full_Plus_Acclim<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/PAM EXPERIMENT/R/CSV/PAM Summary Inshore Exp_startzero_Subjectcorrect_Plus_Acclimatization.csv",header=T,strip.white=TRUE)
+head(PAMInshore_Subject_Full_Plus_Acclim)
+levels(PAMInshore_Subject_Full_Plus_Acclim$Culture)
+
+PAMInshore_Subject_Full_Plus_Acclim$Tank<-as.factor(PAMInshore_Subject_Full_Plus_Acclim$Tank)
+PAMInshore_Subject_Full_Plus_Acclim$Time<-as.numeric(PAMInshore_Subject_Full_Plus_Acclim$Time)
+
+PAMInshore_Subject_Full_Plus_Acclim_nona<-na.omit(PAMInshore_Subject_Full_Plus_Acclim)
+PAMInshore_Subject_Full_Plus_Acclim_nona$fvfm_log<-log(PAMInshore_Subject_Full_Plus_Acclim$FvFm) 
+head(PAMInshore_Subject_Full_Plus_Acclim_nona)
+levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture)
+
+PAMInshore_Subject_Full_Plus_Acclim_nona$Culture<-factor(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture, levels=c("WT", "SS"))
+levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture)
+
+library(nlme)
+library(lme4)
+
+contrasts(PAMInshore_Subject_Full_Plus_Acclim_nona$Treatment) <- contr.treatment(levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Treatment),base=which(levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Treatment) =='31C'))
+contrasts(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture) <- contr.treatment(levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture),base=which(levels(PAMInshore_Subject_Full_Plus_Acclim_nona$Culture) == 'WT'))
+
+#RUN THE NEW MODEL (original with all factors)
+lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim<-lme(fvfm_log~Treatment*Culture*Time, random=~1|Tank/Subject,correlation=corCompSymm(form=~Time|Tank/Subject), data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+
+#Check Assumptions
+#Homogeneity of variance
+dev.off() 
+plot(fitted(lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim),residuals(lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim)) # we dont see any wedge shape so it looks normal.
+
+#Normality
+qqnorm(residuals(lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim)) #looks ok
+qqline(residuals(lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim))
+
+#Summary the model
+summary(lme_lognormal_Ben_interaction_numeric_Cor1_subject3_Plus_Acclim)
+
+
+
+#CONTRAST MATRIX FIRST 29 DAYS
+#RESULTS
+# Result 1-Compare all three treatments over the first month (adapting Option 2) (from day 0 to day 29).
+# From sampling point 1 to 10
+FOR_MATRIX7<-lm(fvfm_log~Treatment*Culture*Time, data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+
+   library(contrast)
+   a7=contrast(FOR_MATRIX7, 
+           a=list(Treatment='27C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+           b=list(Treatment='27C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+   ) 
+
+   a7.mean=t(as.matrix(colMeans(a7$X[1:10,]))) #calculate the mean to the first month
+
+   b7=contrast(FOR_MATRIX7, 
+           a=list(Treatment='31C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+           b=list(Treatment='31C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+   ) 
+
+   b7.mean=t(as.matrix(colMeans(b7$X[1:10,]))) #calculate the mean to the first month
+
+   c7=contrast(FOR_MATRIX7, 
+           a=list(Treatment='32.5C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+           b=list(Treatment='32.5C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+   ) 
+
+   c7.mean=t(as.matrix(colMeans(c7$X[1:10,]))) #calculate the mean to the first month
+
+   PAMmatrixResut7=rbind(a7.mean,b7.mean,c7.mean)
+ 
+#run the model
+lme_Plus_Acclim7<-lme(fvfm_log~Treatment*Culture*Time, random=~1|Tank/Subject,correlation=corCompSymm(form=~Time|Tank/Subject), data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+#run the model with the contrast
+library(multcomp)
+summary(glht(lme_Plus_Acclim7, linfct = PAMmatrixResut7)) 
+
+
+
+#CONTRAST MATRIX 70 DAYS
+# Result 1-Compare all three treatments (adapting Option 2) (from day 0 to day 70).
+FOR_MATRIX8<-lm(fvfm_log~Treatment*Culture*Time, data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+
+   library(contrast)
+    a8=contrast(FOR_MATRIX8, 
+           a=list(Treatment='27C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+           b=list(Treatment='27C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+    ) 
+
+    a8.mean=t(as.matrix(colMeans(a8$X))) #calculate the mean to the whole time series
+
+    b8=contrast(FOR_MATRIX8, 
+           a=list(Treatment='31C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+           b=list(Treatment='31C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+    ) 
+
+    b8.mean=t(as.matrix(colMeans(b8$X))) #calculate the mean to the whole time series
+
+    PAMmatrixResult8=rbind(a8.mean,b8.mean)
+
+   
+#run the model
+lme_Plus_Acclim8<-lme(fvfm_log~Treatment*Culture*Time, random=~1|Tank/Subject,correlation=corCompSymm(form=~Time|Tank/Subject), data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+#run the model with the contrast
+library(multcomp)
+summary(glht(lme_Plus_Acclim8, linfct = PAMmatrixResult8)) 
+
+
+
+#CONTRAST MATRIX FIRST MONTH VS SECOND MONTH
+# Result 5-Compare the first month to the second month 27C and 31C treatments over the 70 days (adapting Option 2).
+
+FOR_MATRIX9<-lm(fvfm_log~Treatment*Culture*Time, data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+
+library(contrast)
+a9=contrast(FOR_MATRIX9, 
+              a=list(Treatment='27C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+              b=list(Treatment='27C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+) 
+
+a9FirstM = t(as.matrix(colMeans(a9$X[1:10,]))) #from sample point 1 to sample point 9
+a9SecondM = t(as.matrix(colMeans(a9$X[10:22,])))
+
+b9=contrast(FOR_MATRIX9, 
+              a=list(Treatment='31C',Culture='WT',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time)), 
+              b=list(Treatment='31C',Culture='SS',Time=unique(PAMInshore_Subject_Full_Plus_Acclim_nona$Time))
+) 
+
+b9FirstM = t(as.matrix(colMeans(b9$X[1:10,]))) #from sample point 1 to sample point 9
+b9SecondM = t(as.matrix(colMeans(b9$X[10:22,]))) #from sample point 9 to sample point 21
+
+
+PAMmatrixResult9=rbind(a9FirstM,b9FirstM,a9SecondM,b9SecondM)
+PAMmatrixResult9
+dim(PAMmatrixResult9)
+
+#run the model with the contrast matrix
+lme_lognormal_Ben_interaction_numeric_Cor1_subject3<-lme(fvfm_log~Treatment*Culture*Time, random=~1|Tank/Subject,correlation=corCompSymm(form=~Time|Tank/Subject), data=PAMInshore_Subject_Full_Plus_Acclim_nona) 
+library(multcomp)
+summary(glht(lme_lognormal_Ben_interaction_numeric_Cor1_subject3, linfct = PAMmatrixResult9,test=adjusted(type='Tukey')))
+
+
+
+#FVFM AT T0
+PAMInshore_Subject_Full<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/PAM EXPERIMENT/R/CSV/PAM Summary Inshore Exp_startzero_Subjectcorrect.csv",header=T,strip.white=TRUE)
+head(PAMInshore_Subject_Full)
+PAMInshore_Subject_Full_nona<-na.omit(PAMInshore_Subject_Full)
+head(PAMInshore_Subject_Full_nona)
+library(dplyr)
+PAMnonaWT31T027C<-filter(PAMInshore_Subject_Full_nona,
+                             Time<=0 &
+                             Culture %in% c('Wt','31mix')&
+                             Treatment=="27C")
+PAMnonaWT31T027C
+PAMt0.lm3=lm(FvFm~Culture,data=PAMnonaWT31T027C)
+#check assumptions
+par(mfrow=c(2,3))
+plot(PAMt0.lm3,which=1:6)
+
+summary(PAMt0.lm3)
+
+
+
+
+
+
+```
+
+
+AREA
+
+
+```{r}
+growth_s_nozeros<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/STATISTICS/20160216 Kates/CSV/SymbSelecExpGrowthInshoreRaw_singles_nozeros.csv",header=T,strip.white=TRUE)
+
+growth_s_nozeros$Day<-as.numeric(growth_s_nozeros$Day) #must be numeric
+
+growth_s_nozeros<-cbind(growth_s_nozeros,DayFactor=growth_s_nozeros$Day) # create a column DayFactor
+growth_s_nozeros$DayFactor<-as.factor(growth_s_nozeros$DayFactor) #make DayFactor as a factor
+
+growth_s_nozeros$TankNumb<-as.factor(growth_s_nozeros$TankNumb)
+
+growth_s_nozeros$Arealog<-log(growth_s_nozeros$Area)
+
+growth_s_nozeros_nona<-na.omit(growth_s_nozeros)
+
+
+library(dplyr) 
+growth_s_nozeros_nona_minus_day22=filter(growth_s_nozeros_nona,growth_s_nozeros_nona$Day!=22) 
+
+head(growth_s_nozeros_nona_minus_day22)
+
+
+AreaT0=filter(growth_s_nozeros_nona_minus_day22,Day=='0')%>%droplevels()
+str(AreaT0)
+AreaT0.lm2=lm(Arealog~Culture,data=AreaT0)
+par(mfrow=c(2,3))
+plot(AreaT0.lm2,which=1:6) #it meets all assumptions
+summary(AreaT0.lm2)
+
+```
+
+
+
+PROPORTION GROWTH
+```{r}
+PropGrowth<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/Growth/R/CSV files/PropGrowth2.csv",header=T,strip.white=TRUE)
+head(PropGrowth)
+
+library(dplyr)
+PropGrowthSR=filter(PropGrowth,SingleOrClump=="s")
+head(PropGrowthSR)
+PropGrowthSR_nona<-na.omit(PropGrowthSR)
+
+PropGrowthSR_nona$TankNumb=as.factor(PropGrowthSR_nona$TankNumb)
+PropGrowthSR_nona$DayNumeric=as.numeric(PropGrowthSR_nona$Day)
+PropGrowthSR_nona$DayFactor=as.factor(PropGrowthSR_nona$Day) #change day from numeric to Factor
+
+
+#DAY 28
+#filter data to keep only day 28 at different temperatures,
+#TEMPERATURE 27C
+library(dplyr)
+PropGrowthSR_nona28at27C=filter(PropGrowthSR_nona,Day=='28'&Temperature=="27C")
+PropGrowhtt28at27C.lm1=lm(PropGrowth~Culture,data=PropGrowthSR_nona28at27C)
+par(mfrow=c(2,3))
+plot(PropGrowhtt28at27C.lm1,which=1:6)
+summary(PropGrowhtt28at27C.lm1)
+
+#TEMPERATURE 31C
+library(dplyr)
+PropGrowthSR_nona28at31C=filter(PropGrowthSR_nona,Day=='28'&Temperature=="31C")
+PropGrowhtt28at31C.lm1=lm(PropGrowth~Culture,data=PropGrowthSR_nona28at31C)
+par(mfrow=c(2,3))
+plot(PropGrowhtt28at31C.lm1,which=1:6)
+summary(PropGrowhtt28at31C.lm1)
+
+#TEMPERATURE 32.5C
+library(dplyr)
+PropGrowthSR_nona28at32C=filter(PropGrowthSR_nona,Day=='28'&Temperature=="32.5C")
+PropGrowhtt28at32C.lm1=lm(PropGrowth~Culture,data=PropGrowthSR_nona28at32C)
+par(mfrow=c(2,3))
+plot(PropGrowhtt28at32C.lm1,which=1:6)
+summary(PropGrowhtt28at32C.lm1)
+
+
+#WT Comparisons within culture at t28
+#WT@27C vs WT@31C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaWTt28at27C31C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="32.5C"&Culture=='WT')%>% droplevels()
+str(PropGrowthSR_nonaWTt28at27C31C) #double check that the filter was correct
+PropGrowthSR_nonaWTt28at27C31C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaWTt28at27C31C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaWTt28at27C31C.lm1,which=1:6)
+summary(PropGrowthSR_nonaWTt28at27C31C.lm1)
+
+#WT@27C vs WT@32.5C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaWTt28at27C32C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="31C"&Culture=='WT')%>% droplevels()
+str(PropGrowthSR_nonaWTt28at27C32C)#double check that the filter was correct
+PropGrowthSR_nonaWTt28at27C32C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaWTt28at27C32C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaWTt28at27C32C.lm1,which=1:6)
+summary(PropGrowthSR_nonaWTt28at27C32C.lm1)
+
+#WT@31C vs WT@32.5C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaWTt28at31C32C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="27C"&Culture=='WT')%>% droplevels()
+str(PropGrowthSR_nonaWTt28at31C32C)#double check that the filter was correct
+PropGrowthSR_nonaWTt28at31C32C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaWTt28at31C32C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaWTt28at31C32C.lm1,which=1:6)
+summary(PropGrowthSR_nonaWTt28at31C32C.lm1)
+
+
+
+#SS Comparisons within culture at t28
+#SS@27C vs SS@31C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaSSt28at27C31C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="32.5C"&Culture=='SS')%>% droplevels()
+str(PropGrowthSR_nonaSSt28at27C31C) #double check that the filter was correct
+PropGrowthSR_nonaSSt28at27C31C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaSSt28at27C31C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaSSt28at27C31C.lm1,which=1:6)
+summary(PropGrowthSR_nonaSSt28at27C31C.lm1)
+
+#SS@27C vs SS@32.5C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaSSt28at27C32C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="31C"&Culture=='SS')%>% droplevels()
+str(PropGrowthSR_nonaSSt28at27C32C)#double check that the filter was correct
+PropGrowthSR_nonaSSt28at27C32C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaSSt28at27C32C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaSSt28at27C32C.lm1,which=1:6)
+summary(PropGrowthSR_nonaSSt28at27C32C.lm1)
+
+#SS@31C vs SS@32.5C at t28
+library(dplyr)
+head(PropGrowthSR_nona)
+PropGrowthSR_nonaSSt28at31C32C=filter(PropGrowthSR_nona,Day=='28'&Temperature!="27C"&Culture=='SS')%>% droplevels()
+str(PropGrowthSR_nonaSSt28at31C32C)#double check that the filter was correct
+PropGrowthSR_nonaSSt28at31C32C.lm1=lm(PropGrowth~Temperature,data=PropGrowthSR_nonaSSt28at31C32C)
+par(mfrow=c(2,3))
+plot(PropGrowthSR_nonaSSt28at31C32C.lm1,which=1:6)
+summary(PropGrowthSR_nonaSSt28at31C32C.lm1)
+
+
+# DAY 72
+# filter data to keep only day 72,
+#TEMPERATURE 27C
+library(dplyr)
+PropGrowthSR_nona72at27C=filter(PropGrowthSR_nona,Day=='72'&Temperature=="27C")
+PropGrowhtt72at27C.lm1=lm(PropGrowth~Culture,data=PropGrowthSR_nona72at27C)
+par(mfrow=c(2,3))
+plot(PropGrowhtt72at27C.lm1,which=1:6)
+summary(PropGrowhtt72at27C.lm1)
+
+#TEMPERATURE 31C
+library(dplyr)
+PropGrowthSR_nona72at31C=filter(PropGrowthSR_nona,Day=='72'&Temperature=="31C")
+PropGrowhtt72at31C.lm1=lm(PropGrowth~Culture,data=PropGrowthSR_nona72at31C)
+par(mfrow=c(2,3))
+plot(PropGrowhtt72at31C.lm1,which=1:6)
+summary(PropGrowhtt72at31C.lm1)
+```
+
+
+#NUMBER OF POLYPS
+```{r}
+growth<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/Growth/R/CSV files/SymbSelecExpGrowthInshoreRaw.csv",header=T,strip.white=TRUE)
+
+growth$Day<-as.numeric(growth$Day) #must be numeric
+growth$TankNumb<-as.factor(growth$TankNumb)
+growthSR<-subset(growth, SingleOrClump == "s")
+growthSR_noNA<-na.omit(growthSR)
+
+#change the name of the levels of factor Culture (from 31mix to SS and from Wtmix to WT)
+
+growthSR_noNA$Culture <- factor(growthSR_noNA$Culture, levels=c("31mix","Wtmix"),lab=c("SS","WT")) 
+#change the levels and the order
+levels(growthSR_noNA$Culture) #double check that the names were correctly changed
+head(growthSR_noNA)
+
+library(dplyr)
+growthSR_noNAminus22=filter(growthSR_noNA, Day!='22') %>% droplevels()
+str(growthSR_noNAminus22)
+
+head(growthSR_noNA)
+library(dplyr)
+growthSR_noNAT0<-filter(growthSR_noNA,Day==0) %>% droplevels()
+str(growthSR_noNAT0)
+
+#fit the model
+growthSR_noNAT0.lm2=lm(sqrt(growthSR_noNAT0$Polyps)~Culture,data=growthSR_noNAT0)
+#check assumptions
+par(mfrow=c(2,3))
+plot(growthSR_noNAT0.lm2,which=1:6) #it looks much better 
+
+
+```
+
+#CHANGE IN NUMBER OF POLYPS
+```{r}
+PropGrowth3<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/Growth/R/CSV files/PropGrowth3.csv",header=T,strip.white=TRUE)
+head(PropGrowth3)
+
+library(dplyr)
+PropGrowthSR3=filter(PropGrowth3,SingleOrClump=="s")
+head(PropGrowthSR3)
+
+PropGrowthSR_nona3<-na.omit(PropGrowthSR3)
+
+
+PropGrowthSR_nona3$TankNumb=as.factor(PropGrowthSR_nona3$TankNumb)
+PropGrowthSR_nona3$DayNumeric=as.numeric(PropGrowthSR_nona3$Day)
+PropGrowthSR_nona3$DayFactor=as.factor(PropGrowthSR_nona3$Day) #change day from numeric to Factor
+PropGrowthSR_nona3$Log10PropGrowthPolypsTranslate=as.integer(PropGrowthSR_nona3$Log10PropGrowthPolypsTranslate)
+
+
+#TEMPERATURE 27C at day 28
+head(PropGrowthSR_nona3)
+library(dplyr)
+PropGrowthPolypsSR_nona28at27C=filter(PropGrowthSR_nona3,Day=='28'&Temperature=="27C")
+
+PropGrowhtPolypst28at27C.glm1=glm(Log10PropGrowthPolypsTranslate~Culture, family='poisson', data=PropGrowthPolypsSR_nona28at27C)
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(PropGrowhtPolypst28at27C.glm1$deviance,PropGrowhtPolypst28at27C.glm1$df.resid) #p=1, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(PropGrowhtPolypst28at27C.glm1) #pvalue=0.152133 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. No zeros in the data
+PropGrowhtPolypst28at27C.mu=mean(PropGrowthPolypsSR_nona28at27C$Log10PropGrowthPolypsTranslate)
+cnts=rpois(1000,PropGrowhtPolypst28at27C.mu)
+PropGrowhtPolypst28at27C.tab=table(cnts==0)
+PropGrowhtPolypst28at27C.tab/sum(PropGrowhtPolypst28at27C.tab)
+
+summary(PropGrowhtPolypst28at27C.glm1)
+
+#TEMPERATURE 31C at day 28
+head(PropGrowthSR_nona3)
+library(dplyr)
+PropGrowthPolypsSR_nona28at31C=filter(PropGrowthSR_nona3,Day=='28'&Temperature=="31C")
+
+PropGrowhtPolypst28at31C.glm1=glm(Log10PropGrowthPolypsTranslate~Culture, family='poisson', data=PropGrowthPolypsSR_nona28at31C)
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(PropGrowhtPolypst28at31C.glm1$deviance,PropGrowhtPolypst28at31C.glm1$df.resid) #p=1, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(PropGrowhtPolypst28at31C.glm1) #pvalue=0.1553996 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. No zeros in the data
+PropGrowhtPolypst28at31C.mu=mean(PropGrowthPolypsSR_nona28at31C$Log10PropGrowthPolypsTranslate)
+cnts=rpois(1000,PropGrowhtPolypst28at31C.mu)
+PropGrowhtPolypst28at31C.tab=table(cnts==0)
+PropGrowhtPolypst28at31C.tab/sum(PropGrowhtPolypst28at31C.tab) #There are 31% of zeros. Murray said that you should only worry if you get 40% zeros in your data then you have consider a zero inflated model. Look for D) Zero inflated model on my notes
+
+#summarize the model
+summary(PropGrowhtPolypst28at31C.glm1)
+
+
+#TEMPERATURE32.5C at day 28
+library(dplyr)
+PropGrowthPolypsSR_nona28at32.5C=filter(PropGrowthSR_nona3,Day=='28'&Temperature=="32.5C")
+
+PropGrowhtPolypst28at32.5C.glm1=glm(Log10PropGrowthPolypsTranslate~Culture, family='poisson', data=PropGrowthPolypsSR_nona28at32.5C)
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(PropGrowhtPolypst28at32.5C.glm1$deviance,PropGrowhtPolypst28at32.5C.glm1$df.resid) #p=1, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(PropGrowhtPolypst28at32.5C.glm1) #pvalue=0.1253312 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. No zeros in the data
+PropGrowhtPolypst28at32.5C.mu=mean(PropGrowthPolypsSR_nona28at32.5C$Log10PropGrowthPolypsTranslate)
+cnts=rpois(1000,PropGrowhtPolypst28at32.5C.mu)
+PropGrowhtPolypst28at32.5C.tab=table(cnts==0)
+PropGrowhtPolypst28at32.5C.tab/sum(PropGrowhtPolypst28at32.5C.tab) #There are 29.8% of zeros. Murray said that you should only worry if you get 40% zeros in your data then you have consider a zero inflated model. Look for D) Zero inflated model on my notes
+
+#summarize the model
+summary(PropGrowhtPolypst28at32.5C.glm1)
+
+#TEMPERATURE 27C at day 72
+head(PropGrowthSR_nona3)
+library(dplyr)
+PropGrowthPolypsSR_nona72at27C=filter(PropGrowthSR_nona3,Day=='72'&Temperature=="27C")
+PropGrowhtPolypst72at27C.glm1=glm(Log10PropGrowthPolypsTranslate~Culture, family='poisson', data=PropGrowthPolypsSR_nona72at27C)
+  
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(PropGrowhtPolypst72at27C.glm1$deviance,PropGrowhtPolypst72at27C.glm1$df.resid) #p=1, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(PropGrowhtPolypst72at27C.glm1) #pvalue=0.2765447 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. No zeros in the data
+PropGrowhtPolypst72at27C.mu=mean(PropGrowthPolypsSR_nona72at27C$Log10PropGrowthPolypsTranslate)
+cnts=rpois(1000,PropGrowhtPolypst72at27C.mu)
+PropGrowhtPolypst72at27C.tab=table(cnts==0)
+PropGrowhtPolypst72at27C.tab/sum(PropGrowhtPolypst72at27C.tab) #There are 27.4% of zeros. Murray said that you should only worry if you get 40% zeros in your data then you have consider a zero inflated model. Look for D) Zero inflated model on my notes
+
+#summarize the model
+summary(PropGrowhtPolypst72at27C.glm1)
+
+
+#TEMPERATURE 31C at day 72
+PropGrowthPolypsSR_nona72at31C=filter(PropGrowthSR_nona3,Day=='72'&Temperature=="31C")
+PropGrowhtPolypst72at31C.glm1=glm(Log10PropGrowthPolypsTranslate~Culture, family='poisson', data=PropGrowthPolypsSR_nona72at31C)
+  
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(PropGrowhtPolypst72at31C.glm1$deviance,PropGrowhtPolypst72at31C.glm1$df.resid) #p=1, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(PropGrowhtPolypst72at31C.glm1) #pvalue=0.1599625 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. No zeros in the data
+PropGrowhtPolypst72at31C.mu=mean(PropGrowthPolypsSR_nona72at31C$Log10PropGrowthPolypsTranslate)
+cnts=rpois(1000,PropGrowhtPolypst72at31C.mu)
+PropGrowhtPolypst72at31C.tab=table(cnts==0)
+PropGrowhtPolypst72at31C.tab/sum(PropGrowhtPolypst72at31C.tab) #There are 25% of zeros. Murray said that you should only worry if you get 40% zeros in your data then you have consider a zero inflated model. Look for D) Zero inflated model on my notes
+
+#summarize the model
+summary(PropGrowhtPolypst72at31C.glm1)
+
+
+```
+
+
+# Cells/mm2
+```{r}
+CellInshore_tank<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/STATISTICS/20160216 Kates/CSV/SymbSelecEx_CellCounts_Inshore_tank_s_2.csv",header=T,strip.white=TRUE)
+head(CellInshore_tank)
+
+CellInshore_tank$Tank=as.factor(CellInshore_tank$Tank)
+CellInshore_tank$Temperature=as.factor(CellInshore_tank$Temperature)
+CellInshore_tank$CellsPerPolyp=as.integer(CellInshore_tank$CellsPerPolyp)
+CellInshore_tank$CellsPerMM2=as.integer(CellInshore_tank$CellsPerMM2)
+CellInshore_tank$PropCellsPerMM2=as.integer(CellInshore_tank$PropCellsPerMM2)
+CellInshore_tank$log10PropCellsPerMM2Translate=as.integer(CellInshore_tank$log10PropCellsPerMM2Translate)
+head(CellInshore_tank_nona)
+library(dplyr)
+CellInshore_tank_nonaT027C<-filter(CellInshore_tank_nona,Time==0& Temperature=='27C')
+
+
+#LM
+CellInshore_tank_nonaT027C.lm1=lm(log(CellsPerMM2)~Culture,data=CellInshore_tank_nonaT027C)
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaT027C.lm1,which=1:6) #OK MODEL
+
+summary(CellInshore_tank_nonaT027C.lm1)
+```
+
+
+
+
+#% CHANGE in Cells/mm2
+% Change Cells/mm2
+```{r}
+# 4 MODELING Percentage Change in Cells per mm2
+# filter the t0 out (this is also done in section 2.2) but I include it here as well
+CellInshore_tank<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/STATISTICS/20160216 Kates/CSV/SymbSelecEx_CellCounts_Inshore_tank_s_2.csv",header=T,strip.white=TRUE)
+head(CellInshore_tank)
+
+CellInshore_tank$Tank=as.factor(CellInshore_tank$Tank)
+CellInshore_tank$Temperature=as.factor(CellInshore_tank$Temperature)
+CellInshore_tank$CellsPerPolyp=as.integer(CellInshore_tank$CellsPerPolyp)
+CellInshore_tank$CellsPerMM2=as.integer(CellInshore_tank$CellsPerMM2)
+CellInshore_tank$PropCellsPerMM2=as.integer(CellInshore_tank$PropCellsPerMM2)
+CellInshore_tank$log10PropCellsPerMM2Translate=as.integer(CellInshore_tank$log10PropCellsPerMM2Translate)
+head(CellInshore_tank_nona)
+
+
+library(dplyr)
+CellInshore_tank_nonaMinusT0=filter(CellInshore_tank_nona,TimeFactor!=0) %>% droplevels()  #keep everything but the TimeFactor=0
+head(CellInshore_tank_nonaMinusT0)
+levels(CellInshore_tank_nonaMinusT0$TimeFactor) #double check that the levels have been dropped
+
+# 4.1 WT@27C vs SS@27C T28
+head(CellInshore_tank_nonaMinusT0)
+library(dplyr)
+CellInshore_tank_nonaMinusT0_27CT28<-filter(CellInshore_tank_nonaMinusT0,Time==28 & Temperature=='27C')%>%droplevels()
+str(CellInshore_tank_nonaMinusT0_27CT28)
+
+##LM
+CellInshore_tank_nonaMinusT0_27CT28.lm1=lm(PropCellsPerMM2~Culture,data=CellInshore_tank_nonaMinusT0_27CT28)
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaMinusT0_27CT28.lm1,which=1:6) #all assumptions ok
+summary(CellInshore_tank_nonaMinusT0_27CT28.lm1) 
+
+# 4.2 WT@31C vs SS@31C T28
+head(CellInshore_tank_nonaMinusT0)
+library(dplyr)
+CellInshore_tank_nonaMinusT0_31CT28<-filter(CellInshore_tank_nonaMinusT0,Time==28 & Temperature=='31C')%>%droplevels()
+str(CellInshore_tank_nonaMinusT0_31CT28)
+
+##LM
+CellInshore_tank_nonaMinusT0_31CT28.lm1=lm(PropCellsPerMM2~Culture,data=CellInshore_tank_nonaMinusT0_31CT28)
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaMinusT0_31CT28.lm1,which=1:6) #all assumptions ok
+summary(CellInshore_tank_nonaMinusT0_31CT28.lm1) 
+
+# 4.3 WT@32.5C vs SS@32.5C T28
+head(CellInshore_tank_nonaMinusT0)
+library(dplyr)
+CellInshore_tank_nonaMinusT0_32.5CT28<-filter(CellInshore_tank_nonaMinusT0,Time==28 & Temperature=='32.5C')%>%droplevels()
+str(CellInshore_tank_nonaMinusT0_32.5CT28)
+
+##4.3.1 LM
+CellInshore_tank_nonaMinusT0_32.5CT28.lm1=lm(PropCellsPerMM2~Culture,data=CellInshore_tank_nonaMinusT0_32.5CT28)
+CellInshore_tank_nonaMinusT0_32.5CT28.lm2=lm(log10PropCellsPerMM2Translate~Culture,data=CellInshore_tank_nonaMinusT0_32.5CT28)
+
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaMinusT0_32.5CT28.lm1,which=1:6) #homogeneity of var and normality not met
+plot(CellInshore_tank_nonaMinusT0_32.5CT28.lm2,which=1:6) #normality not met try glm with poisson
+
+##4.3.2 GLM with poisson distribution
+    ##check if the data follows a binomial of poisson distribution
+#check poisson assumptions for poisson or neg binomial distribuition (following Tutorial 10.6a Poisson and log linear models.pdf)
+#1) goodness of fit
+library(grid)
+library(vcd)
+fit1<- goodfit(CellInshore_tank_nonaMinusT0_32.5CT28$log10PropCellsPerMM2Translate, type='poisson')
+summary(fit1) #data is significant (p=0) which means that follows a poisson distrib
+
+fit2 <- goodfit(CellInshore_tank_nonaMinusT0_32.5CT28$log10PropCellsPerMM2Translate, type='nbinom') 
+summary(fit2) #NaNs produced (it doesnt follow a neg binomial distrib)
+
+#     4.3.2- fit the model with a poisson distribution
+CellInshore_tank_nonaMinusT0_32.5CT28.glm1=glm(log10PropCellsPerMM2Translate~Culture, family='poisson', data=CellInshore_tank_nonaMinusT0_32.5CT28)
+  
+#check assumptions
+    #1a-c)goodness of fit using Deviance
+1-pchisq(CellInshore_tank_nonaMinusT0_32.5CT28.glm1$deviance,CellInshore_tank_nonaMinusT0_32.5CT28.glm1$df.resid) #p=0.99, because p>0.05 doesn't indicates lack of fit. We can continue
+
+    #2f-i)dispersion. With negative binomial we dont look at dispersion (but we need to with poisson)
+library(AER) 
+dispersiontest(CellInshore_tank_nonaMinusT0_32.5CT28.glm1) #pvalue=0.5789474 there's no evidence that the model is overdispersed. We can continue
+
+    #3 Zero inflated. 
+CellInshore_tank_nonaMinusT0_32.5CT28.mu=mean(CellInshore_tank_nonaMinusT0_32.5CT28$log10PropCellsPerMM2Translate)
+cnts=rpois(1000,CellInshore_tank_nonaMinusT0_32.5CT28.mu)
+CellInshore_tank_nonaMinusT0_32.5CT28.tab=table(cnts==0)
+CellInshore_tank_nonaMinusT0_32.5CT28.tab/sum(CellInshore_tank_nonaMinusT0_32.5CT28.tab) #There are 62.9% of zeros. Murray said that you should only worry if you get 40% zeros in your data then you have consider a zero inflated model. Therefore, Look for D) Zero inflated model on my notes
+
+#run a zero inflted test
+library(DHARMa)
+data.sim=simulateResiduals(CellInshore_tank_nonaMinusT0_32.5CT28.glm1)
+testZeroInflation(data.sim) # p-value=0.956 We dont have a zero inflated problem
+
+summary(CellInshore_tank_nonaMinusT0_32.5CT28.glm1) 
+
+
+# 4.4 WT@27C vs SS@27C T70
+head(CellInshore_tank_nonaMinusT0)
+library(dplyr)
+CellInshore_tank_nonaMinusT0_27CT70<-filter(CellInshore_tank_nonaMinusT0,Time==70 & Temperature=='27C')%>%droplevels()
+str(CellInshore_tank_nonaMinusT0_27CT70)
+
+##LM
+CellInshore_tank_nonaMinusT0_27CT70.lm1=lm(PropCellsPerMM2~Culture,data=CellInshore_tank_nonaMinusT0_27CT70)
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaMinusT0_27CT70.lm1,which=1:6) #all assumptions ok
+summary(CellInshore_tank_nonaMinusT0_27CT70.lm1) 
+
+# 4.5 WT@31C vs SS@31C T70
+head(CellInshore_tank_nonaMinusT0)
+library(dplyr)
+CellInshore_tank_nonaMinusT0_31CT70<-filter(CellInshore_tank_nonaMinusT0,Time==70 & Temperature=='31C')%>%droplevels()
+str(CellInshore_tank_nonaMinusT0_31CT70)
+
+##LM
+CellInshore_tank_nonaMinusT0_31CT70.lm1=lm(PropCellsPerMM2~Culture,data=CellInshore_tank_nonaMinusT0_31CT70)
+# model validation
+par(mfrow=c(2,3))
+plot(CellInshore_tank_nonaMinusT0_31CT70.lm1,which=1:6) #all assumptions ok
+summary(CellInshore_tank_nonaMinusT0_31CT70.lm1) 
+
+```
+
+
+#Mortality
+
+```{r}
+###### KATE TO INCLUDE THE survreg(Surv(finalday, status)~-1+SHD, data=mort2, dist="weibull") MODEL
+
+
+
+
+
+```
+
+#Survivorship
+```{r}
+
+MortalitySR<-read.csv("/Users/carlos/Documents/Symbiodinium/SYMBIODINIUM SELECT EXPERIMENT/Growth/R/CSV files/Mortality_Inshore_only_S.csv",header=T,strip.white=TRUE)
+head(MortalitySR)
+
+MortalitySR$Time=as.factor(MortalitySR$Time)
+MortalitySR$Mortality=as.integer(MortalitySR$Mortality)
+MortalitySR$Survivorship=as.integer(MortalitySR$Survivorship)
+MortalitySR$logMortality=log(MortalitySR$Mortality)
+MortalitySR$logSurvivorship=log(MortalitySR$Survivorship)
+MortalitySR$logMortality=as.integer(MortalitySR$logMortality)
+MortalitySR$logSurvivorship=as.integer(MortalitySR$logSurvivorship)
+
+#TEMPERATURE 27C at day 28
+library(dplyr)
+Survivorship28at27C=filter(MortalitySR,Time=='28'&Temperature=="27C")
+Survivorship28at27C.lm1=lm(Survivorship~Culture,data=Survivorship28at27C)
+par(mfrow=c(2,3))
+plot(Survivorship28at27C.lm1,which=1:6) # it looks like the data is not normal (however, keep in mind that the data size is small)
+
+#check poisson assumptions for poisson or neg binomial distribuition (following Tutorial 10.6a Poisson and log linear models.pdf)
+#1) goodness of fit
+library(grid)
+library(vcd)
+fit1<- goodfit(Survivorship28at27C$Survivorship, type='poisson')
+summary(fit1) #data is significant which means that follows a poisson distrib
+fit2 <- goodfit(Survivorship28at27C$Mortality, type='nbinom') 
+summary(fit2) #data follows a binomial distrib
+rootogram(fit1)
+
+#Fitting model using a poisson distribuition
+Survivorship28at27C.glm1=glm(Survivorship~Culture,data=Survivorship28at27C,family='poisson')
+
+#Model validation for a poisson distribuition
+#1a-c)goodness of fit using Deviance
+1-pchisq(Survivorship28at27C.glm1$deviance,Survivorship28at27C.glm1$df.resid) #p>0.05 doesn't indicate the lack of fit
+#2f-i)dispersion. If we look at it using a disperison test 
+library(AER) 
+dispersiontest(Survivorship28at27C.glm1) #pvalue=0.00474 the model IS overdispersed
+#3 Zero inflated. No zeros in the data
+
+#Compare both models
+library(MuMIn)
+AIC(Survivorship28at27C.lm1,Survivorship28at27C.glm1) # the Survivorship28at27C.lm1 has lower (AIC 18.16) compared to Survivorship28at27C.glm1 (AIC 42.2) the so it's a better model. But anyway it's overdispersed so the lm is the best 
+
+#Test the best model
+summary(Survivorship28at27C.lm1)
+
+#TEMPERATURE 31C at day 28
+library(dplyr)
+Survivorship28at31C=filter(MortalitySR,Time=='28'&Temperature=="31C")
+Survivorship28at31C.lm1=lm(Survivorship~Culture,data=Survivorship28at31C)
+par(mfrow=c(2,3))
+plot(Survivorship28at31C.lm1,which=1:6) #it looks normal
+
+#check poisson assumptions for poisson or neg binomial distribuition
+#1) goodness of fit
+library(grid)
+library(vcd)
+fitt2831C<- goodfit(Survivorship28at31C$Mortality, type='poisson')
+summary(fitt2831C) #data is significant which means that follows a poisson distrib
+rootogram(fitt2831C)
+
+#Fitting model using a poisson distribuition
+Survivorship28at31C.glm1=glm(Survivorship~Culture,data=Survivorship28at31C,family='poisson')
+
+#Model validation for a poisson distribuition
+#1a-c)goodness of fit using Deviance
+1-pchisq(Survivorship28at31C.glm1$deviance,Survivorship28at31C.glm1$df.resid) #p>0.05 doesn't indicate the lack of fit
+#2f-i)dispersion. If we look at it using a disperison test 
+library(AER) 
+dispersiontest(Survivorship28at31C.glm1) #pvalue=0.047 the model is overdispersed
+#3 Zero inflated. No zeros in the data
+
+#Compare models
+library(MuMIn)
+AIC(Survivorship28at31C.lm1,Survivorship28at31C.glm1) # the Survivorship28at31C.lm1 has lower AIC (AIC 31.9) compared to Survivorship28at31C.glm1 (AIC 42.6) therefore the Lm is a better model
+
+
+#Test the model
+summary(Survivorship28at31C.lm1)
+
+
+#TEMPERATURE 32.5C at day 28
+library(dplyr)
+Survivorship28at32C=filter(MortalitySR,Time=='28'&Temperature=="32.5C")
+Survivorship28at32C.lm1=lm(Survivorship~Culture,data=Survivorship28at32C)
+par(mfrow=c(2,3))
+plot(Survivorship28at32C.lm1,which=1:6) #data looks normal 
+
+
+#check poisson assumptions for poisson or neg binomial distribuition
+#1) goodness of fit
+library(grid)
+library(vcd)
+fitt2832C<- goodfit(Survivorship28at32C$Survivorship, type='poisson')
+summary(fitt2832C) #data is  significant which means follow a poisson distrib
+rootogram(fitt2832C)
+
+#Fitting model using a poisson distribuition
+Survivorship28at32C.glm1=glm(Survivorship~Culture,data=Survivorship28at32C,family='poisson')
+
+#Model validation for a poisson distribuition
+#1a-c)goodness of fit using Deviance
+1-pchisq(Survivorship28at32C.glm1$deviance,Survivorship28at32C.glm1$df.resid) #p>0.05 doesn't indicate the lack of fit
+#2f-i)dispersion. If we look at it using a disperison test 
+library(AER) 
+dispersiontest(Survivorship28at32C.glm1) #pvalue=1 there's no evidence that the model is overdispersed
+#3 Zero inflated. No zeros in the data
+
+#Test which model is the best
+library(MuMIn)
+AIC(Survivorship28at32C.lm1,Survivorship28at32C.glm1) #the lm is a better model because the AIC is lower (35.07)
+
+#Summary the best model
+summary(Survivorship28at32C.lm1)
+
+
+#TEMPERATURE 27C at day 72
+library(dplyr)
+Survivorship72at27C=filter(MortalitySR,Time=='72'&Temperature=="27C")
+Survivorship72at27C.lm1=lm(Survivorship~Culture,data=Survivorship72at27C)
+par(mfrow=c(2,3))
+plot(Survivorship72at27C.lm1,which=1:6) #QQ does follow a straight line so its normal. However, check glm with poisson distrib (just to compare)
+summary(Survivorship72at27C.lm1)
+
+#check poisson assumptions for poisson or neg binomial distribuition (following Tutorial 10.6a Poisson and log linear models.pdf)
+#1) goodness of fit
+library(grid)
+library(vcd)
+fit72at27<- goodfit(Survivorship72at27C$Survivorship, type='poisson')
+summary(fit72at27) #data is significant which means that follows a poisson distrib
+rootogram(fit72at27)
+
+#Fitting model using a poisson distribuition
+Survivorship72at27C.glm1=glm(Survivorship~Culture,data=Survivorship72at27C,family='poisson')
+
+#Model validation for a poisson distribuition
+#1a-c)goodness of fit using Deviance
+1-pchisq(Survivorship72at27C.glm1$deviance,Survivorship72at27C.glm1$df.resid) #p>0.05  (0.136) doesn't indicate the lack of fit. 
+#2f-i)dispersion. If we look at it using a disperison test 
+library(AER) 
+dispersiontest(Survivorship72at27C.glm1) #pvalue=0.39 there's no evidence that the model is overdispersed. We can continue
+#3 Zero inflated. No zeros in the data
+
+#compare both models
+library(MuMIn)
+AIC(Survivorship72at27C.lm1,Survivorship72at27C.glm1) #50.48926,48.56131 (The glm is better)
+
+summary(Survivorship72at27C.glm1)
+
+
+
+
+#TEMPERATURE 31C at day 72
+library(dplyr)
+Survivorship72at31C=filter(MortalitySR,Time=='72'&Temperature=="31C")
+Survivorship72at31C.lm1=lm(Survivorship~Culture,data=Survivorship72at31C)
+par(mfrow=c(2,3))
+plot(Survivorship72at31C.lm1,which=1:6)
+summary(Survivorship72at31C.lm1)
+
+
+```
+
+
